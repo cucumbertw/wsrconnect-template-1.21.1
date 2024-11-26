@@ -81,87 +81,98 @@ public class Wsrconnect implements ModInitializer {
 //				return toggleReconnect(context.getSource(), true);
 //			}));
 //		});
-		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("WSConnect")
-                .then(literal("allowAutoReconnect")
-                        .requires(source -> source.hasPermissionLevel(2))
-                        .then(literal("true")
-                                .executes(context -> {
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(
+				literal("WSConnect")
+						.then(literal("Reconnect")
+								.requires(source -> source.hasPermissionLevel(2))
+								.executes(context ->{
+									new Thread(() -> {
+										client.reconnect();
+									}).start();
+									return 1;
+								})
+						)
+						.then(literal("allowAutoReconnect")
+							.requires(source -> source.hasPermissionLevel(2))
+							.then(literal("true")
+									.executes(context -> {
 
-                                    System.out.println("true");
-                                    // 对于 1.19 以下的版本，使用 ''new LiteralText''。
-                                    // 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
-                                    allowReconnect = true;
-                                    context.getSource().sendFeedback(() -> Text.literal("设置为true"), false);
-									if (client.isClosing() || client.isClosed()){
-										new Thread(() -> {
+										System.out.println("true");
+										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
+										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
+										allowReconnect = true;
+										context.getSource().sendFeedback(() -> Text.literal("设置为true"), false);
+										if (client.isClosing() || client.isClosed()){
+											new Thread(() -> {
 
-											while (client.isClosing() || client.isClosed()){
-												try {
-													Thread.sleep(10000);
-													System.out.println("尝试重连");
-//							broadcastToMinecraft("机器人连接断开，尝试重连 ");
-													PlayerManager pm = server.getPlayerManager();
+												while (client.isClosing() || client.isClosed()){
+													try {
+														Thread.sleep(10000);
+														System.out.println("尝试重连");
+	//							broadcastToMinecraft("机器人连接断开，尝试重连 ");
+														PlayerManager pm = server.getPlayerManager();
 
-													pm.broadcast(Text.of("机器人连接关闭，重连"), true);
-													System.out.println("尝试重连222");
-													client.reconnect();  // 在新线程中进行重连
+														pm.broadcast(Text.of("机器人连接关闭，重连"), true);
+														System.out.println("尝试重连222");
+														client.reconnect();
+														// 在新线程中进行重连
 
-												} catch (InterruptedException e) {
-													throw new RuntimeException(e);
+													} catch (InterruptedException e) {
+														throw new RuntimeException(e);
+													}
+
 												}
+												System.out.println("重连成功！");
 
-											}
-											System.out.println("重连成功！");
+											}).start();
 
-										}).start();
+										}
 
-									}
+										return 1;
+									})
+							)
+							.then(literal("false")
+									.executes(context -> {
 
-                                    return 1;
-                                })
-                        )
-                        .then(literal("false")
-                                .executes(context -> {
+										System.out.println("false");
+										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
+										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
+										allowReconnect = false;
+										context.getSource().sendFeedback(() -> Text.literal("设置为false"), false);
 
-                                    System.out.println("false");
-                                    // 对于 1.19 以下的版本，使用 ''new LiteralText''。
-                                    // 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
-                                    allowReconnect = false;
-                                    context.getSource().sendFeedback(() -> Text.literal("设置为false"), false);
+										return 1;
+									})
+							)
 
-                                    return 1;
-                                })
-                        )
+					)
+					.then(literal("sendToQQ")
+							.requires(source -> source.hasPermissionLevel(4))
+							.then(literal("true")
+									.executes(context -> {
 
-                )
-                .then(literal("sendToQQ")
-                        .requires(source -> source.hasPermissionLevel(4))
-                        .then(literal("true")
-                                .executes(context -> {
+										System.out.println("true");
+										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
+										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
+										msgToQQ = true;
+										context.getSource().sendFeedback(() -> Text.literal("设置为true"), false);
 
-                                    System.out.println("true");
-                                    // 对于 1.19 以下的版本，使用 ''new LiteralText''。
-                                    // 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
-                                    msgToQQ = true;
-                                    context.getSource().sendFeedback(() -> Text.literal("设置为true"), false);
+										return 1;
+									})
+							)
+							.then(literal("false")
+									.executes(context -> {
 
-                                    return 1;
-                                })
-                        )
-                        .then(literal("false")
-                                .executes(context -> {
+										System.out.println("false");
+										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
+										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
+										msgToQQ = false;
+										context.getSource().sendFeedback(() -> Text.literal("设置为false"), false);
 
-                                    System.out.println("false");
-                                    // 对于 1.19 以下的版本，使用 ''new LiteralText''。
-                                    // 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
-                                    msgToQQ = false;
-                                    context.getSource().sendFeedback(() -> Text.literal("设置为false"), false);
+										return 1;
+									})
+							)
 
-                                    return 1;
-                                })
-                        )
-
-                )
+					)
 
         ));
 
