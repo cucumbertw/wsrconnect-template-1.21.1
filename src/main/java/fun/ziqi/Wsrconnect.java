@@ -9,7 +9,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.command.CommandSource;
+//import net.minecraft.command.CommandSource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.PlayerManager;
@@ -17,45 +17,48 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 
 
 import net.minecraft.text.Text;
-import org.java_websocket.WebSocket;
+//import org.java_websocket.WebSocket;
 import com.google.gson.Gson;
 import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ClientHandshake;
+//import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.server.WebSocketServer;
 import net.minecraft.server.command.ServerCommandSource;
+import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
+//import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import static net.minecraft.server.command.CommandManager.*;
+//import java.util.logging.Logger;
+//import java.util.concurrent.Executors;
+//import java.util.concurrent.ScheduledExecutorService;
+//import java.io.File;
+//import java.io.FileInputStream;
+//import java.io.FileOutputStream;
+//import java.io.IOException;
+//import java.util.Properties;
+//import java.util.concurrent.TimeUnit;
+//import java.util.regex.Matcher;
+//import java.util.regex.Pattern;
+//import static net.minecraft.server.command.CommandManager.*;
 
 import static net.minecraft.server.command.CommandManager.literal;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+//import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+//import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 //import net.minecraft.server.command.CommandRegistryAccess;
 //import net.minecraft.server.command.CommandSource;
 //import net.minecraft.server.command.CommandSyntaxException;
-import net.minecraft.text.Text;
+//import net.minecraft.text.Text;
 
 
 public class Wsrconnect implements ModInitializer {
-	private WebSocketServer webSocketServer;
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Wsrconnect.class);
+	//	private WebSocketServer webSocketServer;
 	private static MinecraftServer server;
 	private WebSocketClient client;
-	private final ScheduledExecutorService reconnectExecutor = Executors.newSingleThreadScheduledExecutor();
+//	private final ScheduledExecutorService reconnectExecutor = Executors.newSingleThreadScheduledExecutor();
 	private boolean allowReconnect = true;
 	private boolean msgToQQ = false;
 
@@ -78,68 +81,89 @@ public class Wsrconnect implements ModInitializer {
 //				return toggleReconnect(context.getSource(), true);
 //			}));
 //		});
-		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-			dispatcher.register(literal("WSConnect")
-					.then(literal("allowAutoReconnect")
-							.requires(source -> source.hasPermissionLevel(2))
-							.then(literal("true")
-									.executes(context -> {
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher.register(literal("WSConnect")
+                .then(literal("allowAutoReconnect")
+                        .requires(source -> source.hasPermissionLevel(2))
+                        .then(literal("true")
+                                .executes(context -> {
 
-										System.out.println("true");
-										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
-										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
-										allowReconnect = true;
-										context.getSource().sendFeedback(() -> Text.literal("设置为true"), false);
+                                    System.out.println("true");
+                                    // 对于 1.19 以下的版本，使用 ''new LiteralText''。
+                                    // 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
+                                    allowReconnect = true;
+                                    context.getSource().sendFeedback(() -> Text.literal("设置为true"), false);
+									if (client.isClosing() || client.isClosed()){
+										new Thread(() -> {
 
-										return 1;
-									})
-							)
-							.then(literal("false")
-									.executes(context -> {
+											while (client.isClosing() || client.isClosed()){
+												try {
+													Thread.sleep(10000);
+													System.out.println("尝试重连");
+//							broadcastToMinecraft("机器人连接断开，尝试重连 ");
+													PlayerManager pm = server.getPlayerManager();
 
-										System.out.println("false");
-										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
-										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
-										allowReconnect = false;
-										context.getSource().sendFeedback(() -> Text.literal("设置为false"), false);
+													pm.broadcast(Text.of("机器人连接关闭，重连"), true);
+													System.out.println("尝试重连222");
+													client.reconnect();  // 在新线程中进行重连
 
-										return 1;
-									})
-							)
+												} catch (InterruptedException e) {
+													throw new RuntimeException(e);
+												}
 
-					)
-					.then(literal("sendToQQ")
-							.requires(source -> source.hasPermissionLevel(4))
-							.then(literal("true")
-									.executes(context -> {
+											}
+											System.out.println("重连成功！");
 
-										System.out.println("true");
-										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
-										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
-										msgToQQ = true;
-										context.getSource().sendFeedback(() -> Text.literal("设置为true"), false);
+										}).start();
 
-										return 1;
-									})
-							)
-							.then(literal("false")
-									.executes(context -> {
+									}
 
-										System.out.println("false");
-										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
-										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
-										msgToQQ = false;
-										context.getSource().sendFeedback(() -> Text.literal("设置为false"), false);
+                                    return 1;
+                                })
+                        )
+                        .then(literal("false")
+                                .executes(context -> {
 
-										return 1;
-									})
-							)
+                                    System.out.println("false");
+                                    // 对于 1.19 以下的版本，使用 ''new LiteralText''。
+                                    // 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
+                                    allowReconnect = false;
+                                    context.getSource().sendFeedback(() -> Text.literal("设置为false"), false);
 
-					)
+                                    return 1;
+                                })
+                        )
 
-			);
+                )
+                .then(literal("sendToQQ")
+                        .requires(source -> source.hasPermissionLevel(4))
+                        .then(literal("true")
+                                .executes(context -> {
 
-		});
+                                    System.out.println("true");
+                                    // 对于 1.19 以下的版本，使用 ''new LiteralText''。
+                                    // 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
+                                    msgToQQ = true;
+                                    context.getSource().sendFeedback(() -> Text.literal("设置为true"), false);
+
+                                    return 1;
+                                })
+                        )
+                        .then(literal("false")
+                                .executes(context -> {
+
+                                    System.out.println("false");
+                                    // 对于 1.19 以下的版本，使用 ''new LiteralText''。
+                                    // 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
+                                    msgToQQ = false;
+                                    context.getSource().sendFeedback(() -> Text.literal("设置为false"), false);
+
+                                    return 1;
+                                })
+                        )
+
+                )
+
+        ));
 
 
 
@@ -249,11 +273,7 @@ public class Wsrconnect implements ModInitializer {
 
 									pm.broadcast(Text.of("机器人连接关闭，重连"), true);
 									System.out.println("尝试重连222");
-									try {
-										reconnect();  // 在新线程中进行重连
-									}finally {
-
-									}
+									reconnect();  // 在新线程中进行重连
 
 								} catch (InterruptedException e) {
 									throw new RuntimeException(e);
@@ -323,7 +343,7 @@ public class Wsrconnect implements ModInitializer {
 
 
 		}catch (URISyntaxException e) {
-			e.printStackTrace();
+			log.error(String.valueOf(e));
 		}
 	}
 
@@ -353,9 +373,9 @@ public class Wsrconnect implements ModInitializer {
 			int code = jsonObject.get("code").getAsInt();
 
 			PlayerManager pm = server.getPlayerManager();
-			String Version = server.getVersion();
+//			String Version = server.getVersion();
 			int ServerPort = server.getServerPort();
-			String ServerIP = server.getServerIp();
+//			String ServerIP = server.getServerIp();
 //		String icon = server.getIconFile();
 			String motd = server.getServerMotd();
 			StringBuilder playerList2 = new StringBuilder();
@@ -398,9 +418,9 @@ public class Wsrconnect implements ModInitializer {
 
 
 				// 提取出匹配的白名单字符串op
-				String whitelistName = msg;
-				String command = "easywhitelist add " + whitelistName;
-				System.out.println("提取的白名单字符串: [" + whitelistName + "]");
+//				String whitelistName = msg;
+				String command = "easywhitelist add " + msg;
+				System.out.println("提取的白名单字符串: [" + msg + "]");
 
 				ServerCommandSource source = server.getCommandSource();
 				CommandDispatcher<ServerCommandSource> dispatcher = server.getCommandManager().getDispatcher();
