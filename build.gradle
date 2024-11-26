@@ -1,0 +1,120 @@
+plugins {
+	id 'fabric-loom' version '1.8-SNAPSHOT'
+	id 'maven-publish'
+	id 'com.github.johnrengelman.shadow' version '7.1.2'
+	id 'java'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+repositories {
+	// Add repositories to retrieve artifacts from in here.
+	// You should only use this when depending on other mods because
+	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
+	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
+	// for more information about repositories.
+	mavenCentral()
+
+}
+
+
+dependencies {
+	// To change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API. This is technically optional, but you probably want it anyway.
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+	modImplementation (include('org.java-websocket:Java-WebSocket:1.5.3'))
+//	modImplementation files('libs/Java-WebSocket-1.5.3.jar')
+//	modImplementation files('libs/easywhitelist.jar')
+
+}
+
+processResources {
+	inputs.property "version", project.version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": project.version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+}
+
+java {
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+	// if it is present.
+	// If you remove this line, sources will not be generated.
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+
+}
+
+jar {
+	from("LICENSE") {
+		rename { "${it}_${project.base.archivesName.get()}"}
+	}
+//	manifest {
+//		attributes "Main-Class": "cn.buddie.GradleTest"
+//	}
+}
+
+
+
+
+//shadowJar {
+//	archiveClassifier.set('')
+//	configurations = [project.configurations.runtimeClasspath]
+//	relocate 'org.java_websocket'
+//}
+
+//tasks {
+//	shadowJar {
+//		archiveClassifier.set("") // 去掉默认的 "-all" 后缀
+//		configurations = [project.configurations.runtimeClasspath]
+//		relocate 'org.java_websocket' // 避免依赖冲突
+//	}
+//
+//	build {
+//		dependsOn shadowJar // 确保 build 任务会打包 shadowJar
+//	}
+//}
+//tasks.named('shadowJar') {
+//	archiveClassifier.set('') // 设置最终 JAR 的名称为无后缀（例如，不使用 `-all`）
+//	configurations = [project.configurations.runtimeClasspath] // 确保 runtimeClasspath 的所有内容被打包
+//	relocate 'org.java_websocket' // 避免依赖类冲突
+//}
+
+
+
+
+
+// configure the maven publication
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			artifactId = project.archives_base_name
+			from components.java
+		}
+	}
+
+	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+	repositories {
+		// Add repositories to publish to here.
+		// Notice: This block does NOT have the same function as the block in the top level.
+		// The repositories here will be used for publishing your artifact, not for
+		// retrieving dependencies.
+	}
+}
+
