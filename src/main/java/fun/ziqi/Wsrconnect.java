@@ -32,6 +32,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,6 +57,7 @@ public class Wsrconnect implements ModInitializer {
 	private WebSocketClient client;
 	private final ScheduledExecutorService reconnectExecutor = Executors.newSingleThreadScheduledExecutor();
 	private boolean allowReconnect = true;
+	private boolean msgToQQ = false;
 
 
 
@@ -95,6 +101,34 @@ public class Wsrconnect implements ModInitializer {
 										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
 										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
 										allowReconnect = false;
+										context.getSource().sendFeedback(() -> Text.literal("设置为false"), false);
+
+										return 1;
+									})
+							)
+
+					)
+					.then(literal("sendToQQ")
+							.requires(source -> source.hasPermissionLevel(4))
+							.then(literal("true")
+									.executes(context -> {
+
+										System.out.println("true");
+										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
+										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
+										msgToQQ = true;
+										context.getSource().sendFeedback(() -> Text.literal("设置为true"), false);
+
+										return 1;
+									})
+							)
+							.then(literal("false")
+									.executes(context -> {
+
+										System.out.println("false");
+										// 对于 1.19 以下的版本，使用 ''new LiteralText''。
+										// 对于 1.20 以下的版本，直接使用 ''Text'' 对象而非 supplier。
+										msgToQQ = false;
 										context.getSource().sendFeedback(() -> Text.literal("设置为false"), false);
 
 										return 1;
@@ -165,6 +199,8 @@ public class Wsrconnect implements ModInitializer {
 
 
 	}
+
+
 
 
 
@@ -293,12 +329,18 @@ public class Wsrconnect implements ModInitializer {
 
 
 
+
+
 	private void registerEvents() {
 		ServerMessageEvents.CHAT_MESSAGE.register((message, player, sender) -> {
 			String msg = message.getContent().getString();
 			String pname = player.getName().getString();
+			if (msgToQQ){
+				sendMessageToRobot(pname, msg, "0");
+
+
+			}
 			System.out.println("[Chat] " + pname + "说了: " + msg);
-			sendMessageToRobot(pname, msg, "0");
 		});
 	}
 
@@ -417,4 +459,7 @@ public class Wsrconnect implements ModInitializer {
 
 
 	}
+
+
+
 }
